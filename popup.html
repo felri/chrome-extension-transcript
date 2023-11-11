@@ -6,7 +6,6 @@
     <style>
       body {
         width: 720px;
-        height: 700px;
         font-size: 16px;
         background-color: #1e1e1e;
         color: aliceblue;
@@ -16,6 +15,9 @@
       .message {
         margin-top: 5px;
         font-weight: bold;
+      }
+      a {
+        color: #6eb4ee;
       }
       #transcript {
         margin-top: 10px;
@@ -87,6 +89,7 @@
   </head>
   <body>
     <h1>OpenAI Voice Assistant</h1>
+    <p>To get your API key go here: https://platform.openai.com/api-keys</p>
     <input type="password" id="apiKey" placeholder="OpenAI API Key" />
     <button id="updateApiKeyButton">Save API Key</button>
     <textarea id="systemMessage" rows="4"></textarea>

@@ -234,9 +234,10 @@ async function sendToChatgptCompletion() {
 
   for await (const data of stream) {
     // Append the new text to the ongoing response
-    ongoingResponse += data.choices[0].delta.content;
     // Display the new message
-    if (ongoingResponse) {
+    if (data.choices[0].delta.content) {
+      ongoingResponse += data.choices[0].delta.content;
+
       displayOngoingMessage(ongoingResponse);
 
       // scroll transript id element to bottom
