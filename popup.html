@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Popup</title>
+    <style>
+      body {
+        width: 720px;
+        height: 700px;
+        font-size: 16px;
+        background-color: #1e1e1e;
+        color: aliceblue;
+        display: flex;
+        flex-direction: column;
+      }
+      .message {
+        margin-top: 5px;
+        font-weight: bold;
+      }
+      #transcript {
+        margin-top: 10px;
+        width: 100%;
+        font-weight: bold;
+        padding: 5px;
+      }
+      .user {
+        color: #85d588;
+      }
+      .assistant {
+        color: #6eb4ee;
+      }
+      #ongoingMessage {
+        font-weight: bold;
+        width: 100%;
+        padding: 5px;
+        display: flex;
+        color: #6eb4ee;
+      }
+      textarea {
+        background-color: #4b4b4b;
+        color: aliceblue;
+        width: 100%;
+        margin-top: 10px;
+        min-height: 100px;
+        padding: 2px;
+      }
+      input {
+        background-color: #4b4b4b;
+        color: aliceblue;
+        margin-top: 10px;
+        padding: 2px;
+
+      }
+      button {
+        cursor: pointer;
+        /* beautiful button */
+        background-color: #4caf50;
+        border: none;
+        color: white;
+        padding: 10px;
+        margin: 5px;
+        font-weight: bold;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.5s;
+      }
+      button:hover {
+        background-color: #3e8e41;
+      }
+      button:disabled {
+        background-color: #cccccc;
+        color: #666666;
+        cursor: not-allowed;
+      }
+      .recording {
+        color: #ff0000;
+      }
+      .container-transcript
+      {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      /* Additional styles as needed */
+    </style>
+  </head>
+  <body>
+    <h1>OpenAI Voice Assistant</h1>
+    <input type="password" id="apiKey" placeholder="OpenAI API Key" />
+    <button id="updateApiKeyButton">Save API Key</button>
+    <textarea id="systemMessage" rows="4"></textarea>
+    <button id="updateSystemMessage">Update System Message</button><br />
+    <div class="container-transcript">
+      <div id="transcript"></div>
+      <div id="ongoingMessage"></div>
+    </div>
+    <div id="recordingStatus"></div>
+    <button id="startRecording">Start</button>
+    <button id="stopRecording" disabled>Stop</button>
+    <button id="clearTranscript">Clear Transcript</button>
+    <script src="./dist/bundle.js"></script>
+  </body>
+</html>

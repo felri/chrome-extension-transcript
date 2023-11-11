@@ -1,0 +1,21 @@
+{
+  "name": "Tab Capture Example",
+  "description": "Demonstrates how to use the chrome.tabCapture API.",
+  "version": "1",
+  "manifest_version": 3,
+  "action": {
+    "scripts": ["dist/bundle.js"],
+    "default_popup": "popup.html", 
+    "default_icon": "icon.png"
+  },
+  "commands": {
+    "_execute_browser_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "MacCtrl+Shift+Y"
+      },
+      "description": "Capture the current tab"
+    }
+  },
+  "permissions": ["tabCapture", "storage", "activeTab"]
+}
