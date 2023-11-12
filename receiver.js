@@ -199,8 +199,9 @@ function displayTranscription() {
       (message.role === "user" ? "Input: " : "Output: ") + message.content;
     messageElement.classList.add(message.role);
     transcriptElement.appendChild(messageElement);
-    transcriptElement.scrollTop = transcriptElement.scrollHeight;
   });
+  document.body.scrollTop = document.body.scrollHeight;
+  window.scrollTo(0, document.body.scrollHeight);
 }
 
 function displayOngoingMessage(message) {
@@ -246,6 +247,9 @@ async function sendToChatgptCompletion() {
   
       // Force browser to re-render the ongoing message
       const ongoingMessageElement = document.getElementById("ongoingMessage");
+      document.body.scrollTop = document.body.scrollHeight;
+      window.scrollTo(0, document.body.scrollHeight);
+    
       const forceReflow = ongoingMessageElement.offsetHeight;
     }
   }
