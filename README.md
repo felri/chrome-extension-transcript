@@ -4,6 +4,10 @@
 
 The OpenAI Audio Assistant Chrome Extension is a cutting-edge tool designed to enhance productivity and assist with a variety of audio-based tasks. This extension is particularly useful for professionals and students who frequently engage in online meetings, interviews, or consume multimedia content.
 
+## Demo 
+https://github.com/felri/chrome-extension-transcript/assets/56592364/dccdf537-8565-407b-8113-5878a520faf2
+
+
 ## Local Installation and Setup
 
 To use this extension, you need to clone the repository, install dependencies, and build the extension. Here's a step-by-step guide:
