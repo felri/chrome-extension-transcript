@@ -64,12 +64,8 @@
         justify-content: space-between;
         margin-top: 5px;
       }
-      .hide {
-        display: none;
-      }
       button {
         cursor: pointer;
-        /* beautiful button */
         background-color: #4caf50;
         border: none;
         color: white;
@@ -89,6 +85,10 @@
         display: flex;
         justify-content: center;
         align-items: center;
+      }
+      .hide {
+        display: none !important;
+        visibility: hidden !important;
       }
       button:disabled {
         background-color: #cccccc;
@@ -153,7 +153,7 @@
       placeholder="Or you can type a question and press Enter to send it"
     ></textarea>
     <div class="button-container">
-      <button id="startRecording">
+      <button id="startRecording" class="">
         <svg
           width="10"
           height="10"
