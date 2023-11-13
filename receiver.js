@@ -20,7 +20,6 @@ document.addEventListener("DOMContentLoaded", function () {
   let storedApiKey = localStorage.getItem("userApiKey") || "";
   document.getElementById("apiKey").value = storedApiKey;
 
-
   // Retrieve full transcript from local storage
   let storedFullTranscript = localStorage.getItem("fullTranscript");
   if (storedFullTranscript) {
@@ -53,9 +52,9 @@ document.addEventListener("DOMContentLoaded", function () {
       localStorage.setItem("systemMessage", newSystemMessage);
     });
 
-
-  const recordingStatusElement = document.getElementById("recordingStatus");
-  recordingStatusElement.textContent = "Not recording";
+  document
+    .getElementById("typedMessage")
+    .addEventListener("keydown", handleTypedMessage);
 
   document
     .getElementById("startRecording")
@@ -85,14 +84,12 @@ function startRecording() {
       mediaRecorder.ondataavailable = handleDataAvailable;
       mediaRecorder.onstop = handleStop;
       mediaRecorder.start();
-
-      const recordingStatusElement = document.getElementById("recordingStatus");
-      recordingStatusElement.textContent = "Recording...";
-      recordingStatusElement.classList.add("recording");
-
+      
       // Update UI
       document.getElementById("startRecording").disabled = true;
+      document.getElementById("startRecording").classList.add("hide");
       document.getElementById("stopRecording").disabled = false;
+      document.getElementById("stopRecording").classList.remove("hide");
     }
   );
 }
@@ -107,16 +104,13 @@ function stopRecording() {
     stream.getTracks().forEach((track) => track.stop());
   }
 
-  const recordingStatusElement = document.getElementById("recordingStatus");
-  recordingStatusElement.textContent = "Not recording";
-  recordingStatusElement.classList.remove("recording");
-
   // Update UI
   document.getElementById("stopRecording").disabled = true;
+  document.getElementById("stopRecording").classList.add("hide");
   document.getElementById("startRecording").disabled = false;
+  document.getElementById("startRecording").classList.remove("hide");
   isRecording = false;
 }
-
 
 function handleDataAvailable(event) {
   if (event.data.size > 0) {
@@ -204,6 +198,26 @@ function displayTranscription() {
   window.scrollTo(0, document.body.scrollHeight);
 }
 
+function handleTypedMessage(event) {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    const typedMessage = document.getElementById("typedMessage").value.trim();
+    if (typedMessage) {
+      // Process the typed message
+      fullTranscript.push({
+        role: "user",
+        content: typedMessage,
+      });
+      displayTranscription();
+      sendToChatgptCompletion();
+      saveTranscript();
+
+      // Clear the text area after sending the message
+      document.getElementById("typedMessage").value = "";
+    }
+  }
+}
+
 function displayOngoingMessage(message) {
   const ongoingMessageElement = document.getElementById("ongoingMessage");
   ongoingMessageElement.textContent = message + "...";
@@ -244,12 +258,12 @@ async function sendToChatgptCompletion() {
       // scroll transript id element to bottom
       const transcriptElement = document.getElementById("transcript");
       transcriptElement.scrollTop = transcriptElement.scrollHeight;
-  
+
       // Force browser to re-render the ongoing message
       const ongoingMessageElement = document.getElementById("ongoingMessage");
       document.body.scrollTop = document.body.scrollHeight;
       window.scrollTo(0, document.body.scrollHeight);
-    
+
       const forceReflow = ongoingMessageElement.offsetHeight;
     }
   }

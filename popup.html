@@ -33,6 +33,9 @@
       .assistant {
         color: #c4e4ff;
       }
+      textarea::placeholder {
+        color: #cccccc;
+      }
       #ongoingMessage {
         margin-top: 10px;
         width: 100%;
@@ -53,9 +56,16 @@
       input {
         background-color: #4b4b4b;
         color: aliceblue;
-        margin-top: 10px;
         padding: 2px;
-
+        width: 100%;
+      }
+      .button-container {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 5px;
+      }
+      .hide {
+        display: none;
       }
       button {
         cursor: pointer;
@@ -64,6 +74,7 @@
         border: none;
         color: white;
         padding: 10px;
+        width: 100%;
         margin: 5px;
         font-weight: bold;
         text-align: center;
@@ -74,6 +85,11 @@
       button:hover {
         background-color: #3e8e41;
       }
+      #startRecording {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
       button:disabled {
         background-color: #cccccc;
         color: #666666;
@@ -82,28 +98,47 @@
       .recording {
         color: #ff0000;
       }
-      .container-transcript
-      {
+      .stop {
+        background-color: #ff0000;
+      }
+      .stop:hover {
+        background-color: #bd0000 !important;
+      }
+      .container-transcript {
         display: flex;
         flex-direction: column;
         height: 100%;
+        justify-content: center;
+        align-items: center;
+      }
+      .saveApiButton {
+        width: 30%;
       }
       /* Additional styles as needed */
     </style>
   </head>
   <body>
-    <h1>OpenAI Audio Assistant</h1>
     <p>
-      This is a audio assistant that uses the OpenAI API to generate responses
-      to the audio from the current tab.
+      OpenAI Audio Assistant responds to audio from your current tab using
+      OpenAI's API.
     </p>
     <p>
-      Do not click anywhere on the page while recording, as this will cause the
-      recording to stop and the popup to close.
+      Avoid clicking outside this extension popup while recording; it will stop
+      the recording and close the popup.
     </p>
-    <p>To get your API key go here: https://platform.openai.com/api-keys</p>
-    <input type="password" id="apiKey" placeholder="OpenAI API Key" />
-    <button id="updateApiKeyButton">Save API Key</button>
+    <p>
+      Get your OpenAI API key here:
+      <a href="https://platform.openai.com/api-keys" target="_blank"
+        >OpenAI API Keys</a
+      >.
+    </p>
+
+    <div class="button-container">
+      <input type="password" id="apiKey" placeholder="OpenAI API Key" />
+      <button id="updateApiKeyButton" class="saveApiButton">
+        Save API Key
+      </button>
+    </div>
     <textarea id="systemMessage" rows="4"></textarea>
     <button id="updateSystemMessage">Update System Message</button><br />
     <div class="container-transcript">
@@ -111,9 +146,29 @@
       <div id="ongoingMessage"></div>
     </div>
     <div id="recordingStatus"></div>
-    <button id="startRecording">Start</button>
-    <button id="stopRecording" disabled>Stop</button>
-    <button id="clearTranscript">Clear Transcript</button>
+    <textarea
+      type="text"
+      id="typedMessage"
+      rows="4"
+      placeholder="Or you can type a question and press Enter to send it"
+    ></textarea>
+    <div class="button-container">
+      <button id="startRecording">
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 20 20"
+          fill="none"
+          style="margin-right: 5px"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle cx="10" cy="10" r="10" fill="#FF0000" />
+        </svg>
+        Record
+      </button>
+      <button id="stopRecording" class="hide stop" disabled>Stop</button>
+      <button id="clearTranscript">Clear Transcript</button>
+    </div>
     <script src="./dist/bundle.js"></script>
   </body>
 </html>
