@@ -19,20 +19,7 @@ We may receive additional information such as your name, email address, phone nu
 
 ## For Account Registration:
 
-We may collect contact information including name, company name, address, email address, and telephone number.
-
-## How We Use Your Information
-We use the information to:
-
-Operate and maintain our extension.
-
-Improve, personalize, and expand our services.
-
-Analyze how our extension is used.
-
-Communicate with you for customer service, updates, and other information related to the extension.
-
-Enhance security, prevent fraud, and manage risks.
+No registration is necessary.
 
 ## Data Processing and Storage
 
