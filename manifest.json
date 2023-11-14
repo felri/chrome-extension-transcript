@@ -8,5 +8,5 @@
     "default_popup": "popup.html", 
     "default_icon": "icon.png"
   },
-  "permissions": ["tabCapture", "storage", "activeTab"]
+  "permissions": ["tabCapture", "storage", "activeTab", "scripting"]
 }

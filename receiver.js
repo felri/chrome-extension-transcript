@@ -9,6 +9,9 @@ let fullTranscript = [];
 let isRecording = false;
 
 document.addEventListener("DOMContentLoaded", function () {
+  document.body.scrollTop = document.body.scrollHeight;
+  updateTranscriptOnPage();
+
   // Retrieve and set the system message
   let storedSystemMessage =
     localStorage.getItem("systemMessage") ||
@@ -24,7 +27,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let storedFullTranscript = localStorage.getItem("fullTranscript");
   if (storedFullTranscript) {
     fullTranscript = JSON.parse(storedFullTranscript);
-    displayTranscription();
+    updateTranscriptOnPage();
   }
 
   // Add event listener for clearing the transcript
@@ -33,7 +36,7 @@ document.addEventListener("DOMContentLoaded", function () {
     .addEventListener("click", function () {
       fullTranscript = [];
       saveTranscript();
-      displayTranscription();
+      updateTranscriptOnPage();
     });
 
   // Add event listener for updating the API key
@@ -63,7 +66,117 @@ document.addEventListener("DOMContentLoaded", function () {
   document
     .getElementById("stopRecording")
     .addEventListener("click", stopRecording);
+
+  document
+    .getElementById("removeTranscriptOverlay")
+    .addEventListener("click", removeTranscriptOverlay);
+
+  document
+    .getElementById("showTranscriptOverlay")
+    .addEventListener("click", updateTranscriptOnPage);
 });
+
+function updateTranscriptOnPage() {
+  const transcriptHtml = formatTranscriptForDisplay(fullTranscript);
+
+  const showButton = document.getElementById("showTranscriptOverlay");
+  const hideButton = document.getElementById("removeTranscriptOverlay");
+
+  showButton.classList.add("hide");
+  hideButton.classList.remove("hide");
+
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    const activeTab = tabs[0];
+    chrome.scripting.executeScript({
+      target: { tabId: activeTab.id },
+      func: injectTranscriptOverlay,
+      args: [transcriptHtml],
+    });
+  });
+}
+
+function scriptToRemoveTranscriptOverlay() {
+  let overlay = document.getElementById("transcriptOverlay");
+  if (overlay) {
+    overlay.remove();
+  }
+}
+
+function removeTranscriptOverlay() {
+  const showButton = document.getElementById("showTranscriptOverlay");
+  const hideButton = document.getElementById("removeTranscriptOverlay");
+
+  hideButton.classList.add("hide");
+  showButton.classList.remove("hide");
+
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    const activeTab = tabs[0];
+    chrome.scripting.executeScript({
+      target: { tabId: activeTab.id },
+      func: scriptToRemoveTranscriptOverlay,
+    });
+  });
+}
+
+function injectTranscriptOverlay(transcriptHtml) {
+  let overlay = document.getElementById("transcriptOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "transcriptOverlay";
+    overlay.style.position = "fixed";
+    overlay.style.top = "50%";
+    overlay.style.left = "50%";
+    overlay.style.transform = "translate(-50%, -50%)";
+    overlay.style.width = "50%";
+    overlay.style.maxWidth = "720px";
+    overlay.style.height = "50%";
+    overlay.style.backgroundColor = "rgba(0, 0, 0, 0.8)"; // Black background with opacity
+    overlay.style.color = "white";
+    overlay.style.border = "1px solid black";
+    overlay.style.margionTop = "10px";
+    overlay.style.boxSizing = "border-box";
+    overlay.style.overflowY = "auto";
+    overlay.style.zIndex = "1000";
+    overlay.style.fontSize = "17px";
+    overlay.style.fontWeight = "bold";
+    overlay.style.lineHeight = "25.5px";
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = transcriptHtml;
+  overlay.scrollTop = overlay.scrollHeight; // Auto-scroll to the bottom
+}
+
+function formatTranscriptForDisplay(fullTranscript) {
+  return fullTranscript
+    .map((transcript) => {
+      return `<div 
+      style='margin-bottom: 10px; padding: 10px; border: 1px solid black; border-radius: 5px; color: ${
+        transcript.role === "user" ? "lightgray" : "white"
+      };'
+      class='${transcript.role}'>${transcript.content}</div>`;
+    })
+    .join("");
+}
+
+function injectOngoingMessage(message) {
+  let transcriptOverlay = document.getElementById("transcriptOverlay");
+
+  let ongoingMessage = document.getElementById("ongoingMessage");
+  if (!ongoingMessage) {
+    ongoingMessage = document.createElement("div");
+    ongoingMessage.id = "ongoingMessage";
+    ongoingMessage.style.fontSize = "17px";
+    ongoingMessage.style.fontWeight = "bold";
+    ongoingMessage.style.lineHeight = "25.5px";
+    ongoingMessage.style.color = "white";
+    ongoingMessage.style.padding = "10px";
+    ongoingMessage.style.marginTop = "10px";
+    transcriptOverlay.appendChild(ongoingMessage);
+  }
+  ongoingMessage.innerHTML = message;
+  // scroll transript id element to bottom
+  transcriptOverlay.scrollTop = transcriptOverlay.scrollHeight;
+}
 
 function startRecording() {
   isRecording = true;
@@ -84,7 +197,7 @@ function startRecording() {
       mediaRecorder.ondataavailable = handleDataAvailable;
       mediaRecorder.onstop = handleStop;
       mediaRecorder.start();
-      
+
       // Update UI
       document.getElementById("startRecording").disabled = true;
       document.getElementById("startRecording").classList.add("hide");
@@ -171,31 +284,13 @@ function sendForTranscription(wavFile, userApiKey) {
         role: "user",
         content: data.text,
       });
-      displayTranscription();
+      updateTranscriptOnPage();
       sendToChatgptCompletion();
       saveTranscript();
     })
     .catch((error) => {
       console.error("Error:", error);
     });
-}
-
-function displayTranscription() {
-  // Update the transcriptElement to display the full conversation
-  const transcriptElement = document.getElementById("transcript");
-  transcriptElement.innerHTML = ""; // Clear the existing content
-
-  // Iterate over each message in the fullTranscript array and display it
-  fullTranscript.forEach((message) => {
-    const messageElement = document.createElement("div");
-    messageElement.classList.add("message");
-    messageElement.textContent =
-      (message.role === "user" ? "Input: " : "Output: ") + message.content;
-    messageElement.classList.add(message.role);
-    transcriptElement.appendChild(messageElement);
-  });
-  document.body.scrollTop = document.body.scrollHeight;
-  window.scrollTo(0, document.body.scrollHeight);
 }
 
 function handleTypedMessage(event) {
@@ -208,7 +303,7 @@ function handleTypedMessage(event) {
         role: "user",
         content: typedMessage,
       });
-      displayTranscription();
+      updateTranscriptOnPage();
       sendToChatgptCompletion();
       saveTranscript();
 
@@ -219,8 +314,14 @@ function handleTypedMessage(event) {
 }
 
 function displayOngoingMessage(message) {
-  const ongoingMessageElement = document.getElementById("ongoingMessage");
-  ongoingMessageElement.textContent = message + "...";
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    const activeTab = tabs[0];
+    chrome.scripting.executeScript({
+      target: { tabId: activeTab.id },
+      func: injectOngoingMessage,
+      args: [message],
+    });
+  });
 }
 
 async function sendToChatgptCompletion() {
@@ -254,17 +355,6 @@ async function sendToChatgptCompletion() {
       ongoingResponse += data.choices[0].delta.content;
 
       displayOngoingMessage(ongoingResponse);
-
-      // scroll transript id element to bottom
-      const transcriptElement = document.getElementById("transcript");
-      transcriptElement.scrollTop = transcriptElement.scrollHeight;
-
-      // Force browser to re-render the ongoing message
-      const ongoingMessageElement = document.getElementById("ongoingMessage");
-      document.body.scrollTop = document.body.scrollHeight;
-      window.scrollTo(0, document.body.scrollHeight);
-
-      const forceReflow = ongoingMessageElement.offsetHeight;
     }
   }
 
@@ -274,5 +364,5 @@ async function sendToChatgptCompletion() {
   });
   saveTranscript();
   displayOngoingMessage("");
-  displayTranscription();
+  updateTranscriptOnPage();
 }

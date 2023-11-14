@@ -4,8 +4,14 @@
     <meta charset="UTF-8" />
     <title>Popup</title>
     <style>
+      html {
+        max-height: 250px;
+        overflow-y: scroll;
+      }
       body {
         width: 760px;
+        max-height: 250px;
+        overflow-x: hidden;
         font-size: 16px;
         background-color: #1e1e1e;
         color: aliceblue;
@@ -141,10 +147,6 @@
     </div>
     <textarea id="systemMessage" rows="4"></textarea>
     <button id="updateSystemMessage">Update System Message</button><br />
-    <div class="container-transcript">
-      <div id="transcript"></div>
-      <div id="ongoingMessage"></div>
-    </div>
     <div id="recordingStatus"></div>
     <textarea
       type="text"
@@ -168,6 +170,9 @@
       </button>
       <button id="stopRecording" class="hide stop" disabled>Stop</button>
       <button id="clearTranscript">Clear Transcript</button>
+      <button id="showTranscriptOverlay" class="hide">Show Overlay</button>
+      <button id="removeTranscriptOverlay">Hide Overlay</button>
+
     </div>
     <script src="./dist/bundle.js"></script>
   </body>
