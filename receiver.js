@@ -6,6 +6,7 @@ let audioContext;
 let sourceNode;
 let stream;
 let fullTranscript = [];
+let isRecording = false;
 
 document.addEventListener("DOMContentLoaded", function () {
   document.body.scrollTop = document.body.scrollHeight;
