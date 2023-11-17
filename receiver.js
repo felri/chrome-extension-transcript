@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Retrieve and set the system message
   let storedSystemMessage =
     localStorage.getItem("systemMessage") ||
-    "This is a transcript of a question from a software developer position interview, answer the question as if you were the interviewee. Make it short and easy to read, no examples, just text in the language of the question and with simple words. Make it sound like a real person, not a robot. As it would be a real conversation.";
+    "This is a transcript of a youtube video, guess the content of the video.";
 
   document.getElementById("systemMessage").value = storedSystemMessage;
 
