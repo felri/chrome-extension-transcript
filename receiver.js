@@ -6,10 +6,8 @@ let audioContext;
 let sourceNode;
 let stream;
 let fullTranscript = [];
-let isRecording = false;
 
 document.addEventListener("DOMContentLoaded", function () {
-  document.body.scrollTop = document.body.scrollHeight;
   updateTranscriptOnPage();
 
   // Retrieve and set the system message
@@ -22,6 +20,10 @@ document.addEventListener("DOMContentLoaded", function () {
   // Retrieve and set the API key
   let storedApiKey = localStorage.getItem("userApiKey") || "";
   document.getElementById("apiKey").value = storedApiKey;
+
+  if (storedApiKey) {
+    document.body.scrollTop = document.body.scrollHeight;
+  }
 
   // Retrieve full transcript from local storage
   let storedFullTranscript = localStorage.getItem("fullTranscript");
@@ -179,7 +181,6 @@ function injectOngoingMessage(message) {
 }
 
 function startRecording() {
-  isRecording = true;
   chrome.tabCapture.capture(
     { audio: true, video: false },
     function (capturedStream) {
@@ -222,7 +223,6 @@ function stopRecording() {
   document.getElementById("stopRecording").classList.add("hide");
   document.getElementById("startRecording").disabled = false;
   document.getElementById("startRecording").classList.remove("hide");
-  isRecording = false;
 }
 
 function handleDataAvailable(event) {

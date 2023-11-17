@@ -1,7 +1,7 @@
 {
   "name": "OpenAI Audio Assistant",
   "description": "A Chrome extension that uses OpenAI's API to generate text from audio of the current tab.",
-  "version": "1",
+  "version": "1.1",
   "manifest_version": 3,
   "action": {
     "scripts": ["dist/bundle.js"],
