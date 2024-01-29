@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8" http-equiv="Content-Security-Policy" content="script-src 'self' 'wasm-unsafe-eval'; object-src 'self'">"
     <title>Popup</title>
     <style>
       html {
@@ -172,8 +172,9 @@
       <button id="clearTranscript">Clear Transcript</button>
       <button id="showTranscriptOverlay" class="hide">Show Overlay</button>
       <button id="removeTranscriptOverlay">Hide Overlay</button>
-
+      <button id="takeScreenshot">Screenshot</button>
     </div>
     <script src="./dist/bundle.js"></script>
+    <script src="./dist/tesseract.min.js"></script>
   </body>
 </html>

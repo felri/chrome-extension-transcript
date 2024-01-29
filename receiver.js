@@ -6,6 +6,7 @@ let audioContext;
 let sourceNode;
 let stream;
 let fullTranscript = [];
+let isDoingOCR = false;
 
 document.addEventListener("DOMContentLoaded", function () {
   updateTranscriptOnPage();
@@ -76,7 +77,160 @@ document.addEventListener("DOMContentLoaded", function () {
   document
     .getElementById("showTranscriptOverlay")
     .addEventListener("click", updateTranscriptOnPage);
+
+  document
+    .getElementById("takeScreenshot")
+    .addEventListener("click", setSelectionListener);
+
+  chrome.runtime.onMessage.addListener(function (
+    message,
+    sender,
+    sendResponse
+  ) {
+    if (message.selection) {
+      console.log("Selection start:", message.selection.start);
+      console.log("Selection end:", message.selection.end);
+      document.getElementById("takeScreenshot").disabled = false;
+      updateTranscriptOnPage();
+      // Here you could process the selected area
+      if (!isDoingOCR) {
+        isDoingOCR = true;
+        captureScreenshot(message.selection, (dataUrl) => {
+          // do ocr
+          doOCR(dataUrl).then((text) => {
+            console.log(text);
+            fullTranscript.push({
+              role: "user",
+              content: text,
+            });
+            updateTranscriptOnPage();
+            sendToChatgptCompletion();
+            saveTranscript();
+          });
+        });
+      }
+
+
+    }
+  });
 });
+
+const doOCR = async (image) => {
+  const { createWorker } = Tesseract;
+  const worker = createWorker({
+    workerPath: chrome.runtime.getURL("worker.min.js"),
+    langPath: chrome.runtime.getURL("traineddata"),
+    corePath: chrome.runtime.getURL("tesseract-core.wasm.js"),
+    workerBlobURL: false, // This line solves your error
+    logger: (m) => console.log(m),
+  });
+  console.log("doing ocr");
+  await worker.load();
+  console.log("loading language");
+  await worker.loadLanguage("eng");
+  console.log("initializing language");
+  await worker.initialize("eng");
+  console.log("recognizing");
+  const {
+    data: { text },
+  } = await worker.recognize(image);
+  console.log("text");
+  console.log(text);
+  await worker.terminate();
+  isDoingOCR = false;
+  return text;
+};
+
+function captureScreenshot(selection, callback) {
+  chrome.tabs.captureVisibleTab(null, { format: "png" }, function (dataUrl) {
+    let img = new Image();
+    img.onload = function () {
+      let canvas = document.createElement("canvas");
+      let ctx = canvas.getContext("2d");
+      let width = Math.abs(selection.end.x - selection.start.x);
+      let height = Math.abs(selection.end.y - selection.start.y);
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(
+        img,
+        selection.start.x,
+        selection.start.y,
+        width,
+        height,
+        0,
+        0,
+        width,
+        height
+      );
+      callback(canvas.toDataURL());
+    };
+    img.src = dataUrl;
+  });
+}
+
+function setSelectionListener() {
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    const activeTab = tabs[0];
+    chrome.scripting.executeScript({
+      target: { tabId: activeTab.id },
+      function: startSelectionTool,
+    });
+  });
+  document.getElementById("takeScreenshot").disabled = true;
+  removeTranscriptOverlay();
+}
+
+function startSelectionTool() {
+  let selectionStart = null;
+  let selectionEnd = null;
+  let overlay = null;
+
+  // update mouse cursor to crosshair
+  document.body.style.cursor = "crosshair";
+
+  function startSelection(event) {
+    selectionStart = { x: event.clientX, y: event.clientY };
+    overlay = document.createElement("div");
+    overlay.id = "selectionOverlay";
+    overlay.style.position = "fixed";
+    overlay.style.background = "rgba(0, 0, 0, 0.5)";
+    overlay.style.pointerEvents = "none";
+    document.body.appendChild(overlay);
+    document.addEventListener("mousemove", updateSelection);
+    document.addEventListener("mouseup", endSelection);
+  }
+
+  function updateSelection(event) {
+    selectionEnd = { x: event.clientX, y: event.clientY };
+    let overlay = document.getElementById("selectionOverlay");
+    document.body.style.cursor = "crosshair";
+    if (overlay) {
+      overlay.style.left = Math.min(selectionStart.x, selectionEnd.x) + "px";
+      overlay.style.top = Math.min(selectionStart.y, selectionEnd.y) + "px";
+      overlay.style.width = Math.abs(selectionStart.x - selectionEnd.x) + "px";
+      overlay.style.height = Math.abs(selectionStart.y - selectionEnd.y) + "px";
+    }
+  }
+
+  function endSelection(event) {
+    document.removeEventListener("mousemove", updateSelection);
+    document.removeEventListener("mouseup", endSelection);
+    document.addEventListener("mousedown", startSelection);
+    document.body.style.cursor = "default";
+    let overlay = document.getElementById("selectionOverlay");
+    if (overlay) {
+      overlay.remove();
+    }
+
+    // Here you could process the selected area
+    // For example, send it back to the extension
+    chrome.runtime.sendMessage({
+      selection: { start: selectionStart, end: selectionEnd },
+    });
+  }
+
+  document.addEventListener("mousedown", startSelection);
+}
 
 function updateTranscriptOnPage() {
   const transcriptHtml = formatTranscriptForDisplay(fullTranscript);
@@ -267,9 +421,6 @@ function sendForTranscription(wavFile, userApiKey) {
   formData.append("file", wavFile, "audio.wav");
   formData.append("model", "whisper-1");
 
-  console.log("Sending for transcription...");
-  console.log(formData);
-
   fetch("https://api.openai.com/v1/audio/transcriptions", {
     method: "POST",
     headers: {
@@ -340,7 +491,7 @@ async function sendToChatgptCompletion() {
   const messagesForApiCall = [systemMessage].concat(fullTranscript);
 
   const stream = await openai.chat.completions.create({
-    model: "gpt-4-1106-preview",
+    model: "gpt-4-turbo-preview",
     messages: messagesForApiCall,
     stream: true,
   });

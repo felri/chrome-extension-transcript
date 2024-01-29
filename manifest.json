@@ -5,8 +5,23 @@
   "manifest_version": 3,
   "action": {
     "scripts": ["dist/bundle.js"],
-    "default_popup": "popup.html", 
+    "default_popup": "popup.html",
     "default_icon": "icon.png"
   },
-  "permissions": ["tabCapture", "activeTab", "scripting"]
+  "permissions": ["tabCapture", "activeTab", "scripting"],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "dist/bundle.js",
+        "worker.min.js",
+        "tesseract.min.js",
+        "tessearct-core.wasm.js",
+        "traineddata/*.traineddata.gz"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; worker-src 'self'"
+  }
 }
