@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function () {
               role: "user",
               content: text,
             });
-            document.getElementById("typedMessage").value = text;
+            document.getElementById("typedMessage").value += (" " + text);
           });
         });
         setTimeout(() => {
