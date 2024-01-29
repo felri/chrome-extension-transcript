@@ -91,36 +91,140 @@ document.addEventListener("DOMContentLoaded", function () {
       console.log("Selection start:", message.selection.start);
       console.log("Selection end:", message.selection.end);
       document.getElementById("takeScreenshot").disabled = false;
-      updateTranscriptOnPage();
       // Here you could process the selected area
       if (!isDoingOCR) {
         isDoingOCR = true;
         captureScreenshot(message.selection, (dataUrl) => {
           // do ocr
           doOCR(dataUrl).then((text) => {
-            console.log(text);
             fullTranscript.push({
               role: "user",
               content: text,
             });
-            updateTranscriptOnPage();
-            sendToChatgptCompletion();
-            saveTranscript();
+            document.getElementById("typedMessage").value = text;
           });
         });
+        setTimeout(() => {
+          updateTranscriptOnPage();
+        }, 200);
       }
-
-
     }
   });
 });
 
+function captureScreenshot(selection, callback) {
+  chrome.tabs.captureVisibleTab(null, { format: "png" }, function (dataUrl) {
+    let img = new Image();
+    img.onload = function () {
+      let canvas = document.createElement("canvas");
+      let ctx = canvas.getContext("2d");
+      canvas.width = img.width; // This width is based on the device pixel ratio
+      canvas.height = img.height; // Same for height
+      ctx.drawImage(img, 0, 0);
+      let cropCanvas = document.createElement("canvas");
+      let cropCtx = cropCanvas.getContext("2d");
+      let ratio = window.devicePixelRatio; // Get device pixel ratio
+
+      // Adjust selection coordinates by the device pixel ratio and scroll position
+      let x = (selection.start.x - selection.end.scrollX) * ratio;
+      let y = (selection.start.y - selection.end.scrollY) * ratio;
+      let width = Math.abs(selection.end.x - selection.start.x) * ratio;
+      let height = Math.abs(selection.end.y - selection.start.y) * ratio;
+
+      cropCanvas.width = width;
+      cropCanvas.height = height;
+      cropCtx.drawImage(canvas, x, y, width, height, 0, 0, width, height);
+      callback(cropCanvas.toDataURL());
+      // Assuming addImageToPopup exists and needs to be called here
+    };
+    img.src = dataUrl;
+  });
+}
+function startSelectionTool() {
+  let selectionStart = null;
+  let selectionEnd = null;
+  let overlay = null;
+
+  // update mouse cursor to crosshair
+  document.body.style.cursor = "crosshair";
+
+  function startSelection(event) {
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+
+    selectionStart = {
+      x: event.clientX + scrollX,
+      y: event.clientY + scrollY,
+      scrollX,
+      scrollY,
+    };
+    // remove hability to select text
+    document.body.style.userSelect = "none";
+    Array.from(document.querySelectorAll("*")).forEach((el) => {
+      el.style.userSelect = "none";
+      el.style.webkitUserSelect = "none";
+    });
+    overlay = document.createElement("div");
+    overlay.id = "selectionOverlay";
+    overlay.style.position = "absolute";
+    overlay.style.background = "rgba(0, 0, 0, 0.5)";
+    overlay.style.pointerEvents = "none";
+    document.body.appendChild(overlay);
+    document.addEventListener("mousemove", updateSelection);
+    document.addEventListener("mouseup", endSelection);
+  }
+
+  function updateSelection(event) {
+    selectionEnd = {
+      x: event.clientX + window.scrollX,
+      y: event.clientY + window.scrollY,
+      scrollX: window.scrollX,
+      scrollY: window.scrollY,
+    };
+    let overlay = document.getElementById("selectionOverlay");
+    document.body.style.cursor = "crosshair !important";
+    if (overlay) {
+      overlay.style.left = Math.min(selectionStart.x, selectionEnd.x) + "px";
+      overlay.style.top = Math.min(selectionStart.y, selectionEnd.y) + "px";
+      overlay.style.width = Math.abs(selectionStart.x - selectionEnd.x) + "px";
+      overlay.style.height = Math.abs(selectionStart.y - selectionEnd.y) + "px";
+    }
+  }
+
+  function endSelection(event) {
+    document.removeEventListener("mousemove", updateSelection);
+    document.removeEventListener("mouseup", endSelection);
+    document.body.style.cursor = "default";
+    let overlay = document.getElementById("selectionOverlay");
+    if (overlay) {
+      overlay.remove();
+      document.body.style.userSelect = "auto";
+      document.body.style.webkitUserSelect = "auto";
+      Array.from(document.querySelectorAll("*")).forEach((el) => {
+        el.style.userSelect = "auto";
+        el.style.webkitUserSelect = "auto";
+      });
+      // so the selection does not show up in the screenshot
+      setTimeout(() => {
+        chrome.runtime.sendMessage({
+          selection: { start: selectionStart, end: selectionEnd },
+        });
+      }, 300);
+    }
+
+    // Here you could process the selected area
+    // For example, send it back to the extension
+  }
+
+  document.addEventListener("mousedown", startSelection);
+}
+
 const doOCR = async (image) => {
   const { createWorker } = Tesseract;
   const worker = createWorker({
-    workerPath: chrome.runtime.getURL("worker.min.js"),
-    langPath: chrome.runtime.getURL("traineddata"),
-    corePath: chrome.runtime.getURL("tesseract-core.wasm.js"),
+    workerPath: chrome.runtime.getURL("dist/worker.min.js"),
+    langPath: chrome.runtime.getURL("dist/traineddata"),
+    corePath: chrome.runtime.getURL("dist/tesseract-core.wasm.js"),
     workerBlobURL: false, // This line solves your error
     logger: (m) => console.log(m),
   });
@@ -141,31 +245,10 @@ const doOCR = async (image) => {
   return text;
 };
 
-function captureScreenshot(selection, callback) {
-  chrome.tabs.captureVisibleTab(null, { format: "png" }, function (dataUrl) {
-    let img = new Image();
-    img.onload = function () {
-      let canvas = document.createElement("canvas");
-      let ctx = canvas.getContext("2d");
-      let width = Math.abs(selection.end.x - selection.start.x);
-      let height = Math.abs(selection.end.y - selection.start.y);
-      canvas.width = width;
-      canvas.height = height;
-      ctx.drawImage(
-        img,
-        selection.start.x,
-        selection.start.y,
-        width,
-        height,
-        0,
-        0,
-        width,
-        height
-      );
-      callback(canvas.toDataURL());
-    };
-    img.src = dataUrl;
-  });
+function addImageToPopup(dataUrl) {
+  let img = document.createElement("img");
+  img.src = dataUrl;
+  document.body.appendChild(img);
 }
 
 function setSelectionListener() {
@@ -178,58 +261,6 @@ function setSelectionListener() {
   });
   document.getElementById("takeScreenshot").disabled = true;
   removeTranscriptOverlay();
-}
-
-function startSelectionTool() {
-  let selectionStart = null;
-  let selectionEnd = null;
-  let overlay = null;
-
-  // update mouse cursor to crosshair
-  document.body.style.cursor = "crosshair";
-
-  function startSelection(event) {
-    selectionStart = { x: event.clientX, y: event.clientY };
-    overlay = document.createElement("div");
-    overlay.id = "selectionOverlay";
-    overlay.style.position = "fixed";
-    overlay.style.background = "rgba(0, 0, 0, 0.5)";
-    overlay.style.pointerEvents = "none";
-    document.body.appendChild(overlay);
-    document.addEventListener("mousemove", updateSelection);
-    document.addEventListener("mouseup", endSelection);
-  }
-
-  function updateSelection(event) {
-    selectionEnd = { x: event.clientX, y: event.clientY };
-    let overlay = document.getElementById("selectionOverlay");
-    document.body.style.cursor = "crosshair";
-    if (overlay) {
-      overlay.style.left = Math.min(selectionStart.x, selectionEnd.x) + "px";
-      overlay.style.top = Math.min(selectionStart.y, selectionEnd.y) + "px";
-      overlay.style.width = Math.abs(selectionStart.x - selectionEnd.x) + "px";
-      overlay.style.height = Math.abs(selectionStart.y - selectionEnd.y) + "px";
-    }
-  }
-
-  function endSelection(event) {
-    document.removeEventListener("mousemove", updateSelection);
-    document.removeEventListener("mouseup", endSelection);
-    document.addEventListener("mousedown", startSelection);
-    document.body.style.cursor = "default";
-    let overlay = document.getElementById("selectionOverlay");
-    if (overlay) {
-      overlay.remove();
-    }
-
-    // Here you could process the selected area
-    // For example, send it back to the extension
-    chrome.runtime.sendMessage({
-      selection: { start: selectionStart, end: selectionEnd },
-    });
-  }
-
-  document.addEventListener("mousedown", startSelection);
 }
 
 function updateTranscriptOnPage() {
