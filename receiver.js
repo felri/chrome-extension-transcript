@@ -88,20 +88,15 @@ document.addEventListener("DOMContentLoaded", function () {
     sendResponse
   ) {
     if (message.selection) {
-      console.log("Selection start:", message.selection.start);
-      console.log("Selection end:", message.selection.end);
-      document.getElementById("takeScreenshot").disabled = false;
+      document.getElementById("takeScreenshot").innerText = "Capturing...";
+
       // Here you could process the selected area
       if (!isDoingOCR) {
         isDoingOCR = true;
         captureScreenshot(message.selection, (dataUrl) => {
           // do ocr
           doOCR(dataUrl).then((text) => {
-            fullTranscript.push({
-              role: "user",
-              content: text,
-            });
-            document.getElementById("typedMessage").value += (" " + text);
+            document.getElementById("typedMessage").value += " " + text;
           });
         });
         setTimeout(() => {
@@ -241,7 +236,12 @@ const doOCR = async (image) => {
   console.log("text");
   console.log(text);
   await worker.terminate();
+
+  document.getElementById("takeScreenshot").disabled = false;
+  document.getElementById("takeScreenshot").innerText = "Screenshot";
+
   isDoingOCR = false;
+  
   return text;
 };
 
